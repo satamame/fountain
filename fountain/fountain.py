@@ -7,9 +7,33 @@ Original code for Objective-C at https://github.com/nyousefi/Fountain
 Further Edited by Manuel Senfft
 """
 
+import re
+import string
 
 COMMON_TRANSITIONS = {'FADE OUT.', 'CUT TO BLACK.', 'FADE TO BLACK.'}
 UPPER_ALPHABETS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ÄÖÜ1234567890'
+
+paren_ptn = re.compile(r'\(.*?\)')
+
+
+def _is_character(line: str) -> bool:
+    '''Test if line is valid as character name
+    '''
+    if line[0] == '@':
+        return True
+
+    if line[0] in ['[', ']', ',', '(', ')']:
+        return False
+
+    if line[0] not in UPPER_ALPHABETS:
+        return False
+
+    # Remove parenthesis-enclosed parts in which any character is valid
+    concise_line = paren_ptn.sub('', line)
+
+    # Remaining part should consist of uppercases and punctuation
+    return all(
+        [(c in UPPER_ALPHABETS + string.punctuation) for c in concise_line])
 
 
 class FountainElement:
@@ -305,9 +329,7 @@ class Fountain:
                 newlines_before > 0
                 and index + 1 < len(script_body)
                 and script_body[index + 1]
-                and not line[0] in ['[', ']', ',', '(', ')']
-                and (all([(c in UPPER_ALPHABETS) for c in full_strip])
-                     or full_strip[0] == '@')
+                and _is_character(full_strip)
             ):
                 newlines_before = 0
                 if full_strip[-1] == '^':
